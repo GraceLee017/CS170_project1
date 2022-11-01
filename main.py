@@ -5,11 +5,14 @@ import time
 goal = [['1','2','3'],['4','5','6'],['7','8','0']]
 coord = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]] # coordinates of the goal state
 
-
+nodesExp = 0 #everytime we append to queue add 1
+qSize = 0 #everytime append add 1; everytime pop subtract 1
+max = 0 #compare with max to track biggest queue size
 
 def main():
     puzzle = chooseBoard()
     chooseSearch(puzzle)
+
 
 #which board does the user want to solve
 def chooseBoard():
@@ -47,6 +50,7 @@ def chooseBoard():
     printBoard(board)
     return board
 
+
 def chooseSearch(board):
     search = input('Which search would you like to implement?\n1: Uniform Search\n2: Manhattan Search\n3: Tile Search\nInput: ')
     while search != '1' and search != '2' and search != '3':
@@ -54,13 +58,14 @@ def chooseSearch(board):
         search = input('Which search would you like to implement?\n1: Uniform Search\n2: Manhattan Search\n3: Tile Search\nInput: ')
     if search == '1':
         print('Uniform Search')
-        UniformSearch(board, goal)
+        return UniformSearch(board, goal)
     elif search == '2':
         print('Manhattan Search')
-        ManhattanSearch(board, goal)
+        return ManhattanSearch(board, goal)
     elif search == '3':
         print('TileSearch')
-        TileSearch(board, goal)
+        return TileSearch(board, goal)
+
 
 def printBoard(board):
     for i in range(0,3):
@@ -69,25 +74,63 @@ def printBoard(board):
         print('')
 
 
-
 #gets the different ways that the blank can move
 def getChildren(board):
     print('hi')
 
+
 #Breadth First Search - A* g(n) + h(n) where h(n) = 0
 def UniformSearch(board,goal):
-    print('hello')
+    depth = 0
+    queue = [board]
+    done = [board]
+    while len(queue) > 0:
+        node = queue.pop()
+        if(node == goal):
+            printBoard(node)
+            print('Goal State!')
+            print('Solution Depth was ' + depth)
+            print('Number of nodes expanded: ' + nodesExp)
+            print('Max queue size: ' + qSize)
+            return node
+        else:
+            queue.append(getChildren(node))
+    return None
     
 
-
 def ManhattanSearch(board, goal):
-    print('hello')
+    depth = 0
+    queue = [board] #of states
+    alg = []   #of sum of algorithms
+    done = [board]
+    #calculate the h(n)
+    while len(queue) > 0:
+        node = queue.pop()
+        manhattan = 0
+        for i in range(0,3):
+            for j in range(0,3):
+                if node[i][j] != goal[i][j] and node[i][j] != '0':
+                    value = int(node[i][j])
+                    manhattan += (abs(i-coord[value-1][0]) + abs(j-coord[value-1][1]))
+        print(manhattan)
+        alg.append(depth + manhattan)
+    print('The best state to expand with a g(n) = 3 and h(n) = 0 is: ')
 
 def TileSearch(board, goal):
-    print('Hello')
-
-
+    depth = 0
+    queue3 = [board]
+    alg = [0]   #of sum of algorithms
+    done3 = [board]
+    #calculate h(n)
+    misplaced = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] != goal[i][j]:
+                misplaced +=1
+    if(board[2][2] != '0'):
+        misplaced -=1
+    print(misplaced)
+    print('The best state to expand with a g(n) = 3 and h(n) = 0 is: ')
 
 if __name__ == "__main__":
     main()
-
