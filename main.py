@@ -1,17 +1,31 @@
 import time
+import copy
 # https://www.programiz.com/python-programming/time
 # https://docs.python.org/3/library/time.html
+# https://docs.python.org/3/tutorial/classes.html
+# https://www.geeksforgeeks.org/copy-python-deep-copy-shallow-copy/
+
+class Node:
+    def __init__(self, state):
+        self.child0 = None # blank moves up
+        self.child1 = None #blank moves down
+        self.child2 = None #blank moves left
+        self.child3 = None #blank moves right
+        self.depth = 0
+        self.cost = 0
+        self.state = state
 
 goal = [['1','2','3'],['4','5','6'],['7','8','0']]
 coord = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]] # coordinates of the goal state
 
 nodesExp = 0 #everytime we append to queue add 1
-qSize = 0 #everytime append add 1; everytime pop subtract 1
+qSize = 0 #len of queue
 max = 0 #compare with max to track biggest queue size
 
 def main():
-    puzzle = chooseBoard()
-    chooseSearch(puzzle)
+    problem = chooseBoard()
+    search = chooseSearch(problem)
+    UniformSearch(problem, search)
 
 
 #which board does the user want to solve
@@ -51,77 +65,174 @@ def chooseBoard():
     return board
 
 
+#user chooses which search to do
+# 1 - Uniform, 2 - Manhatten, 3 - Misplaced
 def chooseSearch(board):
     search = input('Which search would you like to implement?\n1: Uniform Search\n2: Manhattan Search\n3: Tile Search\nInput: ')
     while search != '1' and search != '2' and search != '3':
         print('Try again')
         search = input('Which search would you like to implement?\n1: Uniform Search\n2: Manhattan Search\n3: Tile Search\nInput: ')
-    if search == '1':
-        print('Uniform Search')
-        return UniformSearch(board, goal)
-    elif search == '2':
-        print('Manhattan Search')
-        return ManhattanSearch(board, goal)
-    elif search == '3':
-        print('TileSearch')
-        return TileSearch(board, goal)
+    return search
 
-
+#print baord
 def printBoard(board):
     for i in range(0,3):
         for y in range(0,3):
             print(board[i][y], end = ' ')
         print('')
+    print('')
 
 
 #gets the different ways that the blank can move
-def getChildren(board):
-    print('hi')
+def getChildren(node):
+    children = []
+    board = node.state
+    r = 0
+    c = 0
+    #find the indices for '0'
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] == '0':
+                r = i
+                c = j
+    
+    #0 move right
+    if c !=2:
+        #create new Node
+        rightChild =  Node(board)
+        rightChild.depth = node.depth + 1
+        rightChild.cost = node.cost +1
+
+        child = copy.deepcopy(node.state) # make copy of parent node
+        #swap
+        temp = child[r][c]
+        child[r][c] = child[r][c+1]
+        child[r][c+1] = temp
+
+        #assign the new Node updated board
+        rightChild.state = child
+        #assign child
+        node.child3 = rightChild
+        children.append(rightChild)
+    
+    #0 move left
+    if c !=0:
+        leftChild =  Node(board)
+        leftChild.depth = node.depth + 1
+
+        child = copy.deepcopy(node.state) # make copy of parent node
+        #swap
+        temp = child[r][c]
+        child[r][c] = child[r][c-1]
+        child[r][c-1] = temp
+
+        #assign the new Node updated board
+        leftChild.state = child
+        #assign child
+        node.child2 = child
+        children.append(leftChild)
+    
+    #0 move up
+    if r !=0:
+        upChild = Node(node)
+        upChild.depth = node.depth + 1
+
+        child = copy.deepcopy(node.state) # make copy of parent node
+        #swap
+        temp = child[r][c]
+        child[r][c] = child[r-1][c]
+        child[r-1][c] = temp
+
+        #assign the new Node updated board
+        upChild.state = child
+        #assign child
+        node.child0 = child
+        children.append(upChild)
+
+    #0 move down
+    if r !=2:
+        downChild = Node(node)
+        downChild.depth = node.depth + 1
+
+        child = copy.deepcopy(node.state) # make copy of parent node
+        #swap
+        temp = child[r][c]
+        child[r][c] = child[r+1][c]
+        child[r+1][c] = temp
+
+        #assign the new Node updated board
+        downChild.state = child
+        #assign child
+        node.child1 = child
+        children.append(downChild)
+
+    return children
 
 
 #Breadth First Search - A* g(n) + h(n) where h(n) = 0
-def UniformSearch(board,goal):
-    depth = 0
-    queue = [board]
-    done = [board]
+def UniformSearch(board,search):
+    timestart = time.time()
+    #initialize variables
+    start = Node(board)
+    start.cost = 1
+    queue = []
+    done = []
+    min = 100
+
+    #root node
+    queue.append(start)
     while len(queue) > 0:
-        node = queue.pop()
-        if(node == goal):
-            printBoard(node)
+        node = queue.pop(0)
+        done.append(node)
+        
+        if node.state == goal:
             print('Goal State!')
-            print('Solution Depth was ' + depth)
-            print('Number of nodes expanded: ' + nodesExp)
-            print('Max queue size: ' + qSize)
+            print('Solution Depth was ' + str(node.depth))
+            print('Number of nodes expanded: ' + str(nodesExp))
+            print('Max queue size: ' + str(qSize))
+            print('Time taken is ' + str(f'{(time.time() - timestart):.2f}') + ' secs')
             return node
         else:
-            queue.append(getChildren(node))
-    return None
+            printBoard(node.state)
+            children = getChildren(node)
+            children[:] = [x for x in children if x not in done]
+            if search == '1':
+                for i in children:
+                    queue.append(i)
+            elif search == '2': 
+                for i in children:
+                    heuristic = ManhattanSearch(i)
+                    i.cost = heuristic
+            elif search == '3':
+                for i in children:
+                    heuristic = TileSearch(i)
+                    i.cost = heuristic
+
+            #find index of min heurestic
+            if search != '1':
+                for i in children:
+                    if int(i.cost) < min:
+                        minchild = i
+                        min = i.cost
+                print('The best state to expand with a g(n) = ' + str(minchild.depth) + ' and h(n) = ' + str(minchild.cost) + ' is: ')
+                queue.append(minchild)
     
 
-def ManhattanSearch(board, goal):
-    depth = 0
-    queue = [board] #of states
-    alg = []   #of sum of algorithms
-    done = [board]
+def ManhattanSearch(node):
     #calculate the h(n)
-    while len(queue) > 0:
-        node = queue.pop()
-        manhattan = 0
-        for i in range(0,3):
-            for j in range(0,3):
-                if node[i][j] != goal[i][j] and node[i][j] != '0':
-                    value = int(node[i][j])
-                    manhattan += (abs(i-coord[value-1][0]) + abs(j-coord[value-1][1]))
-        print(manhattan)
-        alg.append(depth + manhattan)
-    print('The best state to expand with a g(n) = 3 and h(n) = 0 is: ')
+    board = node.state
+    manhattan = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            if board[i][j] != goal[i][j] and board[i][j] != '0':
+                value = int(board[i][j])
+                manhattan += (abs(i-coord[value-1][0]) + abs(j-coord[value-1][1]))
+    return manhattan
+    
 
-def TileSearch(board, goal):
-    depth = 0
-    queue3 = [board]
-    alg = [0]   #of sum of algorithms
-    done3 = [board]
+def TileSearch(node):
     #calculate h(n)
+    board = node.state
     misplaced = 0
     for i in range(0,3):
         for j in range(0,3):
@@ -129,8 +240,7 @@ def TileSearch(board, goal):
                 misplaced +=1
     if(board[2][2] != '0'):
         misplaced -=1
-    print(misplaced)
-    print('The best state to expand with a g(n) = 3 and h(n) = 0 is: ')
+    return misplaced
 
 if __name__ == "__main__":
     main()
