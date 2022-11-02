@@ -18,9 +18,8 @@ class Node:
 goal = [['1','2','3'],['4','5','6'],['7','8','0']]
 coord = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]] # coordinates of the goal state
 
-nodesExp = 0 #everytime we append to queue add 1
-qSize = 0 #len of queue
-max = 0 #compare with max to track biggest queue size
+
+
 
 def main():
     problem = chooseBoard()
@@ -40,9 +39,9 @@ def chooseBoard():
     elif boardNumber == '1':
         board = [['1','2','3'],['4','5','6'],['0','7','8']] #depth 2
     elif boardNumber == '2':
-        board = [['1','2','3'],['5','8','6'],['4','7','0']] #depth 4
+        board = [['1','2','3'],['5','0','6'],['4','7','8']] #depth 4
     elif boardNumber == '3':
-        board = [['1','3','6'],['5','8','2'],['4','7','0']] #depth 8
+        board = [['1','3','6'],['5','0','2'],['4','7','8']] #depth 8
     elif boardNumber == '4':
         board = [['1','3','6'],['5','0','7'],['4','8','2']] #depth 12
     elif boardNumber == '5':
@@ -171,51 +170,76 @@ def getChildren(node):
 
 #Breadth First Search - A* g(n) + h(n) where h(n) = 0
 def UniformSearch(board,search):
+    qSize = 0 #len of queue
+    max = 0 #compare with max to track biggest queue size  
+    nodesExp = 0 #everytime we append to queue add 1
     timestart = time.time()
     #initialize variables
     start = Node(board)
     start.cost = 1
     queue = []
     done = []
-    min = 100
 
     #root node
     queue.append(start)
+    # i =0
+    # for i in range(0,10):
     while len(queue) > 0:
         node = queue.pop(0)
-        done.append(node)
+        if node.state not in done:
+            done.append(node.state)
         
         if node.state == goal:
             print('Goal State!')
             print('Solution Depth was ' + str(node.depth))
             print('Number of nodes expanded: ' + str(nodesExp))
-            print('Max queue size: ' + str(qSize))
+            print('Max queue size: ' + str(max))
             print('Time taken is ' + str(f'{(time.time() - timestart):.2f}') + ' secs')
             return node
         else:
+            children = []
+            dup = False
             printBoard(node.state)
-            children = getChildren(node)
-            children[:] = [x for x in children if x not in done]
+            children0 = getChildren(node)
+            for i in children0:
+                for j in done:
+                    if i.state == j:
+                        dup = True
+                if dup == False:
+                    children.append(i)
+                dup = False
             if search == '1':
                 for i in children:
                     queue.append(i)
+                    qSize = len(queue)
+                    if qSize > max:
+                        max = qSize
+                    nodesExp += 1
             elif search == '2': 
                 for i in children:
                     heuristic = ManhattanSearch(i)
                     i.cost = heuristic
+                    nodesExp += len(children)
             elif search == '3':
                 for i in children:
                     heuristic = TileSearch(i)
                     i.cost = heuristic
+                    nodesExp += len(children)
 
             #find index of min heurestic
             if search != '1':
+                min = 100
                 for i in children:
                     if int(i.cost) < min:
                         minchild = i
                         min = i.cost
+                print(min)
+                for i in children:
+                    if i.cost == min:
+                        queue.append(i)
                 print('The best state to expand with a g(n) = ' + str(minchild.depth) + ' and h(n) = ' + str(minchild.cost) + ' is: ')
-                queue.append(minchild)
+                print(len(queue))
+                
     
 
 def ManhattanSearch(node):
