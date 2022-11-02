@@ -243,7 +243,6 @@ def UniformSearch(board,search):
                     if int(i.cost) < min:
                         minchild = i
                         min = i.cost
-                print(min)
                 #find all instances of the min cost
                 for i in children:
                     if i.cost == min:
